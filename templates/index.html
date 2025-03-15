@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Passphrase Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        function generatePassphrase() {
+            let words = document.getElementById("num_words").value;
+
+            fetch("/generate", {
+                method: "POST",
+                body: new URLSearchParams({words: words}),
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("passphrase").innerText = "🔐 Passphrase: " + data.passphrase;
+                document.getElementById("entropy").innerText = "⚡ Entropy: " + data.entropy + " bits";
+                
+                let crackTimeText = "<b>🛡️ Crack Time Estimates:</b><br>";
+                for (const [key, value] of Object.entries(data.crack_times)) {
+                    crackTimeText += `${key}: ${value}<br>`;
+                }
+                document.getElementById("crack_times").innerHTML = crackTimeText;
+                
+                document.getElementById("pwned_status").innerText = data.pwned_status;
+            });
+        }
+
+        function checkPasswordEntropy() {
+            let password = document.getElementById("custom_password").value;
+
+            fetch("/check_entropy", {
+                method: "POST",
+                body: new URLSearchParams({password: password}),
+                headers: { "Content-Type": "application/x-www-form-urlencoded" }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("password_entropy").innerText = "⚡ Entropy: " + data.entropy + " bits";
+                
+                let crackTimeText = "<b>🛡️ Crack Time Estimates:</b><br>";
+                for (const [key, value] of Object.entries(data.crack_times)) {
+                    crackTimeText += `${key}: ${value}<br>`;
+                }
+                document.getElementById("password_crack_times").innerHTML = crackTimeText;
+                
+                document.getElementById("password_pwned_status").innerText = data.pwned_status;
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Secure Passphrase Generator</h1>
+        
+        <h2>Generate a Secure Passphrase</h2>
+        <label>Number of words:</label>
+        <input type="number" id="num_words" value="4" min="2" max="10">
+        <button onclick="generatePassphrase()">Generate</button>
+        
+        <div class="result">
+            <p id="passphrase"></p>
+            <p id="entropy"></p>
+            <p id="crack_times"></p>
+            <p id="pwned_status"></p>
+        </div>
+
+        <h2>🔍 Check Your Password Strength</h2>
+        <input type="text" id="custom_password" placeholder="Enter a password">
+        <button onclick="checkPasswordEntropy()">Check Strength</button>
+
+        <div class="result">
+            <p id="password_entropy"></p>
+            <p id="password_crack_times"></p>
+            <p id="password_pwned_status"></p>
+        </div>
+    </div>
+</body>
+</html>
